@@ -68,7 +68,7 @@ public class RegistrationController extends HttpServlet {
 		if (hasAccount == false) {
 			// HttpSession session = request.getSession();
 			// session.setAttribute("authenticatedUser", authenticatedUser);
-			userDao.insertUser(user);
+			userDao.createNewUser(user);
 			resp.sendRedirect("home");
 		} else {
 			RequestDispatcher requestDispatcher = req

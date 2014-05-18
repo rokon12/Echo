@@ -6,17 +6,16 @@ import edu.univdhaka.iit.echo.domain.UserAccount;
 
 public interface UserDao {
 
-	public void insertUser(UserAccount user);
+    public void createNewUser(UserAccount user);
 
-	public List<UserAccount> getAllUserInfo();
+    public void deleteUser(int id);
 
-	public void deleteUser(String userName);
+    public UserAccount findByEmail(String emailAdress);
 
-	public void updateUser(UserAccount user, int id);
+    public UserAccount findByUserName(String userName);
 
-	public UserAccount findByUserName(String userName);
+    public List<UserAccount> getAllUserInfo();
 
-	public UserAccount findByEmail(String emailAdress);
-
+    public void updateUser(UserAccount user, int id);
 
 }

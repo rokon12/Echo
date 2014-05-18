@@ -1,242 +1,174 @@
 package edu.univdhaka.iit.echo.dao;
 
-import java.sql.Connection;
-import java.sql.PreparedStatement;
 import java.sql.ResultSet;
 import java.sql.SQLException;
-import java.sql.Statement;
-import java.util.ArrayList;
 import java.util.List;
 
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 
 import edu.univdhaka.iit.echo.domain.UserAccount;
+import edu.univdhaka.iit.echo.utils.DatabaseTemplate;
+import edu.univdhaka.iit.echo.utils.ObjectRowMapper;
 
 public class UserDaoImpl implements UserDao {
 
-	private static final Logger log = LoggerFactory
-			.getLogger(UserDaoImpl.class);
-	
-	DatabaseConnector db = new DatabaseConnector();
-	Connection connection = db.openConnection();
+    private static final Logger log = LoggerFactory
+	    .getLogger(UserDaoImpl.class);
 
-	@Override
-	public void insertUser(UserAccount user) {
-		log.debug("insertUser > create user and insert information in database");
-		try {
-			String query = "INSERT INTO USER (version, firstName, lastName, gender, emailAddress, "
-					+ "userName, password, accountNonExpired, accountNonLocked, enabled, credentialsNonExpired)"
-					+ "VALUES(?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?)";
+    @Override
+    public void createNewUser(UserAccount user) {
+	log.debug("createNewUser() > user ={}", user);
 
-			PreparedStatement preparedStatement = null;
-			try {
-				preparedStatement = connection.prepareStatement(query);
-				
-				preparedStatement.setInt(1, user.getVersion());
-				preparedStatement.setString(2, user.getFirstName());
-				preparedStatement.setString(3, user.getLastName());
-				preparedStatement.setString(4, user.getGender());
-				preparedStatement.setString(5, user.getEmailAddress());
-				preparedStatement.setString(6, user.getUserName());
-				preparedStatement.setString(7, user.getPassword());
-				preparedStatement.setBoolean(8, user.isAccountNonExpired());
-				preparedStatement.setBoolean(9, user.isAccountNonLocked());
-				preparedStatement.setBoolean(10, user.isEnabled());
-				preparedStatement.setBoolean(11, user.isCredentialsNonExpired());
-				
-				preparedStatement.execute();
-				
-			} catch (SQLException e) {
-				e.printStackTrace();
-			}
-		} catch (Exception e) {
+	String query = "INSERT INTO USER (version, firstName, lastName, gender, emailAddress,"
+		+ "userName, password, accountNonExpired, accountNonLocked, enabled, credentialsNonExpired)"
+		+ "VALUES(?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?)";
 
-		} finally {
-			db.closeConnection();
-		}
+	try {
+	    DatabaseTemplate.executeInsertQuery(query, user.getVersion(),
+		    user.getFirstName(), user.getLastName(), user.getGender(),
+		    user.getEmailAddress(), user.getUserName(),
+		    user.getPassword(), user.isAccountNonExpired(),
+		    user.isAccountNonLocked(), user.isEnabled(),
+		    user.isCredentialsNonExpired());
+	} catch (SQLException e) {
+	    log.error("unable to insert new user", e);
 	}
+    }
 
-	@Override
-	public List<UserAccount> getAllUserInfo() {
-		log.debug("getAllUserInfo() > get all Users");
-		
-		String query = "SELECT * FROM USER";
-		List<UserAccount> list = new ArrayList<UserAccount>();
-		try {
-			try {
-				Statement statement = connection.createStatement();
-				ResultSet rs = statement.executeQuery(query);
-				while (rs.next()) {
-					UserAccount user = new UserAccount();
-					user.setId(rs.getInt("id"));
-					user.setVersion(rs.getInt("version"));
-					user.setFirstName(rs.getString("firstName"));
-					user.setLastName(rs.getString("lastName"));
-					user.setGender(rs.getString("gender"));
-					user.setUserName(rs.getString("userName"));
-					user.setEmailAddress(rs.getString("emailAddress"));
-					user.setAccountNonExpired(rs
-							.getBoolean("accountNonExpired"));
-					user.setAccountNonLocked(rs.getBoolean("accountNonLocked"));
-					user.setEnabled(rs.getBoolean("enabled"));
-					user.setCredentialsNonExpired(rs
-							.getBoolean("credentialsNonExpired"));
-					list.add(user);
-				}
-			} catch (SQLException e) {
-				e.printStackTrace();
-			}
-		} catch (Exception e) {
-
-		} finally {
-			db.closeConnection();
-		}
-		return list;
+    @Override
+    public void deleteUser(int id) {
+	log.debug("deleteUser() > id ={}", id);
+	try {
+	    String query = "DELETE FROM USER WHERE userName = ?";
+	    DatabaseTemplate.executeDeleteQuery(query, id);
+	} catch (Exception e) {
+	    log.error("unable to delete user", e);
 	}
+    }
 
-	@Override
-	public void deleteUser(String userName) {
-		log.debug("deleteUser() > Delete the user from database");
-		try {
-			String query = "DELETE FROM USER WHERE userName = ?";
-			PreparedStatement preparedStatement = null;
-			try {
-				preparedStatement = connection.prepareStatement(query);
-				preparedStatement.setString(1, userName);
-				preparedStatement.execute();
-			} catch (Exception e) {
-				e.printStackTrace();
-			}
-		} catch (Exception e) {
+    @Override
+    public UserAccount findByEmail(String emailAddress) {
+	log.debug("findByEmail() > find the User from database using email");
 
-		} finally {
-			db.closeConnection();
-		}
+	List<UserAccount> userAccounts = DatabaseTemplate
+		.queryForObject("SELECT * FROM USER WHERE emailAddress ='"
+			+ emailAddress + "'",
+			new ObjectRowMapper<UserAccount>() {
 
+			    @Override
+			    public UserAccount mapRowToObject(ResultSet rs)
+				    throws SQLException {
+				UserAccount user = new UserAccount();
+
+				user.setId(rs.getInt("id"));
+				user.setVersion(rs.getInt("version"));
+				user.setFirstName(rs.getString("firstName"));
+				user.setLastName(rs.getString("lastName"));
+				user.setGender(rs.getString("gender"));
+				user.setUserName(rs.getString("userName"));
+				user.setEmailAddress(rs
+					.getString("emailAddress"));
+				user.setPassword(rs.getString("password"));
+				user.setAccountNonExpired(rs
+					.getBoolean("accountNonExpired"));
+				user.setAccountNonLocked(rs
+					.getBoolean("accountNonLocked"));
+				user.setEnabled(rs.getBoolean("enabled"));
+				user.setCredentialsNonExpired(rs
+					.getBoolean("credentialsNonExpired"));
+				return user;
+			    }
+			});
+
+	return ((userAccounts != null) && (userAccounts.size() > 0)) ? userAccounts
+		.get(0) : null;
+    }
+
+    @Override
+    public UserAccount findByUserName(String userName) {
+	log.debug("findByUserName() > find the User from database using userName");
+
+	List<UserAccount> userAccounts = DatabaseTemplate.queryForObject(
+		"SELECT * FROM USER WHERE userName ='" + userName + "'",
+		new ObjectRowMapper<UserAccount>() {
+
+		    @Override
+		    public UserAccount mapRowToObject(ResultSet rs)
+			    throws SQLException {
+			UserAccount user = new UserAccount();
+
+			user.setId(rs.getInt("id"));
+			user.setVersion(rs.getInt("version"));
+			user.setFirstName(rs.getString("firstName"));
+			user.setLastName(rs.getString("lastName"));
+			user.setGender(rs.getString("gender"));
+			user.setUserName(rs.getString("userName"));
+			user.setEmailAddress(rs.getString("emailAddress"));
+			user.setPassword(rs.getString("password"));
+			user.setAccountNonExpired(rs
+				.getBoolean("accountNonExpired"));
+			user.setAccountNonLocked(rs
+				.getBoolean("accountNonLocked"));
+			user.setEnabled(rs.getBoolean("enabled"));
+			user.setCredentialsNonExpired(rs
+				.getBoolean("credentialsNonExpired"));
+			return user;
+		    }
+		});
+
+	return ((userAccounts != null) && (userAccounts.size() > 0)) ? userAccounts
+		.get(0) : null;
+    }
+
+    @Override
+    public List<UserAccount> getAllUserInfo() {
+	log.debug("getAllUserInfo() > get all Users");
+
+	return DatabaseTemplate.queryForObject("SELECT * FROM USER",
+		new ObjectRowMapper<UserAccount>() {
+
+		    @Override
+		    public UserAccount mapRowToObject(ResultSet rs)
+			    throws SQLException {
+			UserAccount user = new UserAccount();
+			user.setId(rs.getInt("id"));
+			user.setVersion(rs.getInt("version"));
+			user.setFirstName(rs.getString("firstName"));
+			user.setLastName(rs.getString("lastName"));
+			user.setGender(rs.getString("gender"));
+			user.setUserName(rs.getString("userName"));
+			user.setEmailAddress(rs.getString("emailAddress"));
+			user.setPassword(rs.getString("password"));
+			user.setAccountNonExpired(rs
+				.getBoolean("accountNonExpired"));
+			user.setAccountNonLocked(rs
+				.getBoolean("accountNonLocked"));
+			user.setEnabled(rs.getBoolean("enabled"));
+			user.setCredentialsNonExpired(rs
+				.getBoolean("credentialsNonExpired"));
+			return user;
+		    }
+		});
+    }
+
+    @Override
+    public void updateUser(UserAccount user, int id) {
+	log.debug("updateUser() > user ={}, id ={}", user, id);
+
+	String query = "UPDATE USER SET version = ?,firstName = ?, lastName = ?,gender = ?, "
+		+ "userName = ?, password = ?, emailAddress = ?, accountNonExpired = ?, "
+		+ "accountNonLocked = ?, enabled = ?, credentialsNonExpired = ? WHERE id = ?";
+
+	try {
+	    DatabaseTemplate.executeUpdateQuery(query, user.getVersion(),
+		    user.getFirstName(), user.getLastName(), user.getGender(),
+		    user.getEmailAddress(), user.getUserName(),
+		    user.getPassword(), user.isAccountNonExpired(),
+		    user.isAccountNonLocked(), user.isEnabled(),
+		    user.isCredentialsNonExpired(), id);
+	} catch (SQLException e) {
+	    log.error("unable to insert new user", e);
 	}
-
-	@Override
-	public void updateUser(UserAccount user, int id) {
-		log.debug("updateUser() > Update user Information");
-		try {
-			String query = "UPDATE USER SET version = ?,firstName = ?, lastName = ?,gender = ?, "
-					+ "userName = ?, password = ?, emailAddress = ?, accountNonExpired = ?, "
-					+ "accountNonLocked = ?, enabled = ?, credentialsNonExpired = ? WHERE id = ?";
-
-			PreparedStatement preparedStatement = null;
-			try {
-				preparedStatement = connection.prepareStatement(query);
-				
-				preparedStatement.setInt(1, user.getVersion());
-				preparedStatement.setString(2, user.getFirstName());
-				preparedStatement.setString(3, user.getLastName());
-				preparedStatement.setString(4, user.getGender());
-				preparedStatement.setString(5, user.getEmailAddress());
-				preparedStatement.setString(6, user.getUserName());
-				preparedStatement.setString(7, user.getPassword());
-				preparedStatement.setBoolean(8, user.isAccountNonExpired());
-				preparedStatement.setBoolean(9, user.isAccountNonLocked());
-				preparedStatement.setBoolean(10, user.isEnabled());
-				preparedStatement.setBoolean(11, user.isCredentialsNonExpired());
-				preparedStatement.setInt(12, id);
-				
-				preparedStatement.executeUpdate();
-
-			} catch (SQLException e) {
-				e.printStackTrace();
-			}
-		} catch (Exception e) {
-
-		} finally {
-			db.closeConnection();
-		}
-	}
-
-	@Override
-	public UserAccount findByUserName(String userName) {
-		log.debug("findByUserName() > find the User from database using userName");
-		
-		UserAccount user = new UserAccount();
-		try {
-			String query = "SELECT * FROM USER WHERE userName = ?";
-			PreparedStatement preparedStatement = null;
-			try {
-				preparedStatement = connection.prepareStatement(query);
-				preparedStatement.setString(1, userName);
-				ResultSet rs = preparedStatement.executeQuery();
-				boolean flag = false;
-				while (rs.next()) {
-					flag = true;
-					user.setId(rs.getInt("id"));
-					user.setVersion(rs.getInt("version"));
-					user.setFirstName(rs.getString("firstName"));
-					user.setLastName(rs.getString("lastName"));
-					user.setGender(rs.getString("gender"));
-					user.setUserName(rs.getString("userName"));
-					user.setEmailAddress(rs.getString("emailAddress"));
-					user.setPassword(rs.getString("password"));
-					user.setAccountNonExpired(rs
-							.getBoolean("accountNonExpired"));
-					user.setAccountNonLocked(rs.getBoolean("accountNonLocked"));
-					user.setEnabled(rs.getBoolean("enabled"));
-					user.setCredentialsNonExpired(rs
-							.getBoolean("credentialsNonExpired"));
-				}
-				if (!flag)
-					return null;
-			} catch (SQLException e) {
-				e.printStackTrace();
-			}
-		} catch (Exception e) {
-
-		} finally {
-			db.closeConnection();
-		}
-		return user;
-	}
-
-	@Override
-	public UserAccount findByEmail(String emailAddress) {
-		log.debug("findByEmail() > find the User from database using email");
-		UserAccount user = new UserAccount();
-		try {
-			String query = "SELECT * FROM USER WHERE emailAddress = ?";
-			PreparedStatement preparedStatement = null;
-			try {
-				preparedStatement = connection.prepareStatement(query);
-				preparedStatement.setString(1, emailAddress);
-				ResultSet rs = preparedStatement.executeQuery();
-				boolean flag = false;
-				while (rs.next()) {
-					flag = true;
-					user.setId(rs.getInt("id"));
-					user.setVersion(rs.getInt("version"));
-					user.setFirstName(rs.getString("firstName"));
-					user.setLastName(rs.getString("lastName"));
-					user.setGender(rs.getString("gender"));
-					user.setUserName(rs.getString("userName"));
-					user.setEmailAddress(rs.getString("emailAddress"));
-					user.setPassword(rs.getString("password"));
-					user.setAccountNonExpired(rs
-							.getBoolean("accountNonExpired"));
-					user.setAccountNonLocked(rs.getBoolean("accountNonLocked"));
-					user.setEnabled(rs.getBoolean("enabled"));
-					user.setCredentialsNonExpired(rs
-							.getBoolean("credentialsNonExpired"));
-				}
-				if (!flag)
-					return null;
-			} catch (SQLException e) {
-				e.printStackTrace();
-			}
-		} catch (Exception e) {
-
-		} finally {
-			db.closeConnection();
-		}
-		return user;
-	}
+    }
 }
-
-   

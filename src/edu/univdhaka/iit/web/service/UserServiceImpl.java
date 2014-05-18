@@ -8,8 +8,7 @@ import edu.univdhaka.iit.echo.dao.UserDaoImpl;
 import edu.univdhaka.iit.echo.domain.UserAccount;
 
 public class UserServiceImpl implements UserService {
-	private static final Logger log = LoggerFactory
-			.getLogger(UserServiceImpl.class);
+	private static final Logger log = LoggerFactory.getLogger(UserServiceImpl.class);
 
 	private UserDao userDao;
 

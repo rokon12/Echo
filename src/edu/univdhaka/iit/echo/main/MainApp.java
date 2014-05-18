@@ -98,8 +98,8 @@ public class MainApp {
 			echoService.postEcho(echo, user);
 		}
 
-		dat.insertUser(user);
-		dat.insertUser(user1);
+		dat.createNewUser(user);
+		dat.createNewUser(user1);
 		System.out.println(dat.getAllUserInfo());
 		
 

@@ -46,7 +46,7 @@ public class UserDaoImplTest {
 		user.setEnabled(ENABLED);
 		user.setCredentialsNonExpired(CREDENTIALSNONEXPIRED);
 
-		userDao.insertUser(user);
+		userDao.createNewUser(user);
 		
 		// Check By Asserting
 		UserAccount userInfo = userDao.findByUserName("robin");
